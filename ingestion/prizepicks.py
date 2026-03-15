@@ -83,6 +83,7 @@ def fetch_prizepicks_props():
                 "stat": attr["stat_type"],
                 "line": attr["line_score"],
                 "league": league_name,
+                "odds_type": attr.get("odds_type")
             }
         )
 
