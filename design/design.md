@@ -38,6 +38,9 @@ PrizePicks API -> Data Collector -> Player Stats API -> Probability Model -> EV 
 
 
 ## 6. Data Sources
+The BetMVP system relies on two primary data sources:
+- PrizePicks Projection Data: publicly available PrizePicks API that provides the available betting lines
+- NBA Historical Player Statistics: publicly available API Client for NBA.com that is used to create probability model to estimate probability of prop outcome occurring 
 
 
 ## 7. Probability Model
