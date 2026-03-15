@@ -70,12 +70,11 @@ def fetch_prizepicks_props():
         if attr["stat_type"] is None:
             continue
 
-        # SKIPPING PROMO LINES
+        # SKIPPING PROMO AND LIVE LINES
         if attr["is_promo"]:
             continue
 
-        # SKIPPING DEMON LINES
-        if attr.get("odds_type") == "demon":
+        if attr["is_live"]:
             continue
 
         props.append(

@@ -15,9 +15,6 @@ def generate_bets():
 
     df = fetch_prizepicks_props()
 
-    # # TEMP: limit props while debugging
-    # df = df.head(30)
-
     results = []
 
     # cache to avoid repeated NBA API calls for the same player
@@ -50,7 +47,7 @@ def generate_bets():
             mean = values.mean()
             std = values.std()
 
-            if std == 0:
+            if pd.isna(std) or std == 0:
                 continue
 
             prob = 1 - norm.cdf(line, loc=mean, scale=std)
@@ -63,12 +60,12 @@ def generate_bets():
 
             results.append(
                 {
-                    "player": player,
-                    "stat": stat,
-                    "line": line,
-                    "probability": prob,
-                    "ev": ev,
-                    "kelly_fraction": kelly,
+                    "Player": player,
+                    "Stat": stat,
+                    "Line": line,
+                    "Probability": prob,
+                    "EV": ev,
+                    "Kelly Bet": kelly,
                 }
             )
 
@@ -76,7 +73,13 @@ def generate_bets():
             print(f"Skipping {player} {stat}: {e}")
 
     results_df = pd.DataFrame(results)
-    results_df = results_df.sort_values("ev", ascending=False)
+    results_df = results_df.sort_values("EV", ascending=False)
+    results_df = results_df.dropna(subset=["Probability", "EV", "Kelly Bet"])
+
+    results_df["Probability"] = (results_df["Probability"] * 100).round(0).astype(int).astype(str) + "%"
+    results_df["EV"] = results_df["EV"].round(2)
+    results_df["Kelly Bet"] = (results_df["Kelly Bet"] * 100).round(0).astype(int).astype(str) + "%"
+
     return results_df
 
 
