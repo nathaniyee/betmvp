@@ -7,8 +7,6 @@ import pandas as pd
 from scipy.stats import norm
 import time
 
-# BET_SIZE = 10
-
 # approximate single-pick payouts for ranking
 STANDARD_PAYOUT = 2.0
 GOBLIN_PAYOUT = 1.6
