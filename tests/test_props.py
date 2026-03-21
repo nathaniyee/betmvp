@@ -1,4 +1,4 @@
-from ingestion.prizepicks import fetch_prizepicks_props
+from backend.app.ingestion.prizepicks import fetch_prizepicks_props
 
 df = fetch_prizepicks_props()
 

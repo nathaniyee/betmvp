@@ -2,17 +2,31 @@ from nba_api.stats.endpoints import playergamelog
 from nba_api.stats.static import players
 import pandas as pd
 
-ALL_PLAYERS = players.get_players()
 
+def normalize_name(name):
+    """Normalize player name by removing suffixes and formatting"""
+
+    name = name.lower().strip()
+
+    suffixes = [" jr.", " jr", " sr.", " sr", " ii", " iii", " iv"]
+
+    for suffix in suffixes:
+        if name.endswith(suffix):
+            name = name.replace(suffix, "")
+
+    return name.strip()
+
+ALL_PLAYERS = players.get_players()
 PLAYER_MAP = {
-    p["full_name"].lower(): p["id"]
+    normalize_name(p["full_name"]): p["id"]
     for p in ALL_PLAYERS
 }
 
 def get_player_id(player_name):
     """Return NBA player id from name using local map + fallback"""
 
-    name = player_name.lower()
+    name = normalize_name(player_name)
+    name_tokens = set(name.split())
 
     # Exact match
     if name in PLAYER_MAP:
@@ -20,8 +34,11 @@ def get_player_id(player_name):
     
     #Partial match (fallback)
     for full_name, pid in PLAYER_MAP.items():
-        if name in full_name or full_name in name:
-            print(f"Fallback match: {player_name} → {full_name}")
+        full_tokens = set(full_name)
+
+        # check overlap
+        if len(name_tokens & full_tokens) >= len(name_tokens) - 1:
+            print(f"Token match: {player_name} → {full_name}")
             return pid
 
     raise ValueError(f"Player not found: {player_name}")

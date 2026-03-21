@@ -1,5 +1,5 @@
 from scipy.stats import norm
-from ingestion.player_stats import get_stat_distribution
+from backend.app.ingestion.player_stats import get_stat_distribution
 
 
 def probability_over(player_name, stat, line, n_games):

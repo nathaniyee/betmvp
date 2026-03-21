@@ -1,7 +1,8 @@
-from ingestion.prizepicks import fetch_prizepicks_props
-from ingestion.player_stats import get_last_n_games
-from ev.ev_calculator import calculate_single_ev
-from ev.kelly import kelly_fraction
+from app.ingestion.prizepicks import fetch_prizepicks_props
+from app.ingestion.player_stats import get_last_n_games
+from app.ingestion.player_stats import normalize_name
+from app.ev.ev_calculator import calculate_single_ev
+from app.ev.kelly import kelly_fraction
 
 import pandas as pd
 from scipy.stats import norm
