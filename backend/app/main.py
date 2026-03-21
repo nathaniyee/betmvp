@@ -9,7 +9,7 @@ app = FastAPI()
 
 cached_bets = None
 last_updated = 0
-CACHE_TTL = 3600 # seconds -> 1 hour
+CACHE_TTL = 86400 # seconds -> 1 day
 
 app.add_middleware(
     CORSMiddleware,
