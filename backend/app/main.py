@@ -5,6 +5,7 @@ app = FastAPI()
 
 # python -m uvicorn backend.main:app --reload
 
+
 @app.get("/bets")
 def get_bets():
     overs, unders, goblins, demons = generate_bets()
