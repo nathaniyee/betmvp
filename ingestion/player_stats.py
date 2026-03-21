@@ -2,16 +2,29 @@ from nba_api.stats.endpoints import playergamelog
 from nba_api.stats.static import players
 import pandas as pd
 
+ALL_PLAYERS = players.get_players()
+
+PLAYER_MAP = {
+    p["full_name"].lower(): p["id"]
+    for p in ALL_PLAYERS
+}
 
 def get_player_id(player_name):
-    """Return NBA player ID from name"""
+    """Return NBA player id from name using local map + fallback"""
 
-    player_dict = players.find_players_by_full_name(player_name)
+    name = player_name.lower()
 
-    if not player_dict:
-        raise ValueError("Player not found!")
+    # Exact match
+    if name in PLAYER_MAP:
+        return PLAYER_MAP[name]
+    
+    #Partial match (fallback)
+    for full_name, pid in PLAYER_MAP.items():
+        if name in full_name or full_name in name:
+            print(f"Fallback match: {player_name} → {full_name}")
+            return pid
 
-    return player_dict[0]["id"]
+    raise ValueError(f"Player not found: {player_name}")
 
 
 def get_last_n_games(player_name, n_games):

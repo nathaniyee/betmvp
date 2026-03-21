@@ -5,6 +5,7 @@ from ev.kelly import kelly_fraction
 
 import pandas as pd
 from scipy.stats import norm
+import numpy as np
 import time
 
 # approximate single-pick payouts for ranking
@@ -15,12 +16,52 @@ DEMON_PAYOUT = 3.5
 # assume market probability for standard squares
 MARKET_PROB = 0.5
 
+
+def compute_minutes_adjusted_distribution(stats_df, stat):
+    """Compute mean/std using minutes-adjusted + recency weighting"""
+
+    # Filter out low minute games
+    stats_df = stats_df[stats_df["MIN"] > 10]
+
+    if len(stats_df) < 5:
+        return None, None
+
+    minutes = stats_df["MIN"]
+    values = stats_df[stat]
+
+    if minutes.isna().any() or values.isna().any():
+        return None, None
+
+    # Calculate stats per minute
+    ppm = values / minutes
+
+    # Recency weighting
+    weights = np.exp(np.linspace(0, -1, len(ppm)))
+    weights /= weights.sum()
+
+    ppm_mean = (ppm * weights).sum()
+    ppm_var = ((ppm - ppm_mean) ** 2 * weights).sum()
+    ppm_std = np.sqrt(ppm_var)
+
+    # Projected minutes
+    projected_minutes = minutes.tail(5).mean()
+
+    # Convert back
+    mean = ppm_mean * projected_minutes
+    std = ppm_std * projected_minutes
+
+    # Variance floor
+    std = max(std, 0.15 * mean)
+
+    return mean, std
+
+
 def score_standard_props(df, player_stats_cache):
     """Score standard props and choose the best side (over/under)"""
 
     results = []
 
-    for _, row  in df.iterrows():
+    for _, row in df.iterrows():
 
         player = row["player"]
         stat = row["stat_column"]
@@ -32,12 +73,8 @@ def score_standard_props(df, player_stats_cache):
 
         try:
 
-            values = stats_df[stat]
-
-            mean = values.mean()
-            std = values.std()
-
-            if pd.isna(std) or std == 0:
+            mean, std = compute_minutes_adjusted_distribution(stats_df, stat)
+            if mean is None:
                 continue
 
             prob_over = 1 - norm.cdf(line, loc=mean, scale=std)
@@ -50,26 +87,32 @@ def score_standard_props(df, player_stats_cache):
                 bet_side = "UNDER"
                 probability = prob_under
 
+            # clamp probabilities
+            probability = np.clip(probability, 0.05, 0.95)
+
             edge = probability - MARKET_PROB
             ev = calculate_single_ev(probability, STANDARD_PAYOUT)
             kelly = kelly_fraction(probability, STANDARD_PAYOUT)
 
-            results.append({
-                "Player": player,
-                "Stat": stat,
-                "Line": line,
-                "Bet": bet_side,
-                "Probability": probability,
-                "Edge": edge,
-                "EV": ev,
-                "Kelly Bet": kelly
-            })
+            results.append(
+                {
+                    "Player": player,
+                    "Stat": stat,
+                    "Line": line,
+                    "Bet": bet_side,
+                    "Probability": probability,
+                    "Edge": edge,
+                    "EV": ev,
+                    "Kelly Bet": kelly,
+                }
+            )
 
         except Exception:
             continue
 
     return pd.DataFrame(results)
-        
+
+
 def score_one_sided_props(df, player_stats_cache, payout):
     """Score goblins or demons where only one side matters."""
 
@@ -87,37 +130,36 @@ def score_one_sided_props(df, player_stats_cache, payout):
 
         try:
 
-            values = stats_df[stat]
-
-            mean = values.mean()
-            std = values.std()
-
-            if pd.isna(std) or std == 0:
+            mean, std = compute_minutes_adjusted_distribution(stats_df, stat)
+            if mean is None:
                 continue
 
             prob_over = 1 - norm.cdf(line, loc=mean, scale=std)
 
-            probability = prob_over
+            probability = np.clip(prob_over, 0.05, 0.95)
 
             edge = probability - MARKET_PROB
             ev = calculate_single_ev(probability, payout)
             kelly = kelly_fraction(probability, payout)
 
-            results.append({
-                "Player": player,
-                "Stat": stat,
-                "Line": line,
-                "Bet": "OVER",
-                "Probability": probability,
-                "Edge": edge,
-                "EV": ev,
-                "Kelly Bet": kelly
-            })
+            results.append(
+                {
+                    "Player": player,
+                    "Stat": stat,
+                    "Line": line,
+                    "Bet": "OVER",
+                    "Probability": probability,
+                    "Edge": edge,
+                    "EV": ev,
+                    "Kelly Bet": kelly,
+                }
+            )
 
         except Exception:
             continue
 
     return pd.DataFrame(results)
+
 
 def format_output(df):
 
@@ -157,9 +199,22 @@ def generate_bets():
 
     # Score props
     standard_scores = score_standard_props(standard_df, player_stats_cache)
-
     goblin_scores = score_one_sided_props(goblin_df, player_stats_cache, GOBLIN_PAYOUT)
     demon_scores = score_one_sided_props(demon_df, player_stats_cache, DEMON_PAYOUT)
+
+    # Remove duplicate ladder props (keep best EV per player/stat)
+    standard_scores = standard_scores.sort_values("EV", ascending=False)
+    standard_scores = standard_scores.drop_duplicates(
+        subset=["Player", "Stat"], keep="first"
+    )
+
+    goblin_scores = goblin_scores.sort_values("EV", ascending=False)
+    goblin_scores = goblin_scores.drop_duplicates(
+        subset=["Player", "Stat"], keep="first"
+    )
+
+    demon_scores = demon_scores.sort_values("EV", ascending=False)
+    demon_scores = demon_scores.drop_duplicates(subset=["Player", "Stat"], keep="first")
 
     # Split overs and unders
     top_overs = standard_scores[standard_scores["Bet"] == "OVER"]
@@ -179,6 +234,7 @@ def generate_bets():
     top_demons = format_output(top_demons)
 
     return top_overs, top_unders, top_goblins, top_demons
+
 
 if __name__ == "__main__":
 

@@ -15,6 +15,7 @@ def calculate_ev(probability_win, bet_amount, payout_multiplier):
 
     return ev
 
+
 def calculate_single_ev(probability_win, payout_multiplier):
     """
     Calculate expected value of a bet
