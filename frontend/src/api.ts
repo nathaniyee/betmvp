@@ -1,5 +1,5 @@
 export async function fetchBets() {
-    const res = await fetch("http://127.0.0.1:8000/bets");
+    const res = await fetch("https://betmvp-backend.onrender.com/bets");
   
     if (!res.ok) {
       throw new Error("Failed to fetch bets");
@@ -9,7 +9,7 @@ export async function fetchBets() {
 }
 
 export async function refreshBets() {
-    await fetch("http://127.0.0.1:8000/refresh", {
+    await fetch("https://betmvp-backend.onrender.com/refresh", {
       method: "POST",
     });
   }
