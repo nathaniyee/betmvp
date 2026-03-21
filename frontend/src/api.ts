@@ -1,5 +1,7 @@
+const API_URL = import.meta.env.VITE_API_URL;
+
 export async function fetchBets() {
-    const res = await fetch("https://betmvp-backend.onrender.com/bets");
+    const res = await fetch(`${API_URL}/bets`);
   
     if (!res.ok) {
       throw new Error("Failed to fetch bets");
@@ -9,7 +11,7 @@ export async function fetchBets() {
 }
 
 export async function refreshBets() {
-    await fetch("https://betmvp-backend.onrender.com/refresh", {
+    await fetch(`${API_URL}/refresh`, {
       method: "POST",
     });
   }
