@@ -26,8 +26,8 @@ function App() {
 
       <BetSection title="🔥 Top Overs" bets={data.overs} />
       <BetSection title="🧊 Top Unders" bets={data.unders} />
-      <BetSection title="👺 Goblins" bets={data.goblins} />
-      <BetSection title="😈 Demons" bets={data.demons} />
+      <BetSection title="👺 Top Goblins" bets={data.goblins} />
+      <BetSection title="😈 Top Demons" bets={data.demons} />
     </div>
   );
 }
